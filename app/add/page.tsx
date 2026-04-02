@@ -1,0 +1,161 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Card } from "@/types/card";
+
+export default function AddPage() {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [category, setCategory] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const [cards, setCards] = useState<Card[]>(() => {
+    if (typeof window === "undefined") return [];
+
+    const saved = localStorage.getItem("cards");
+    if (!saved) return [];
+
+    const parsed: unknown = JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((card): Card => {
+      const item = card as Partial<Card>;
+
+      return {
+        id: item.id ?? Date.now(),
+        category: item.category ?? "",
+        question: item.question ?? "",
+        answer: item.answer ?? "",
+        status: item.status === "mastered" ? "mastered" : "new",
+      };
+    });
+  });
+
+  useEffect(() => {
+    localStorage.setItem("cards", JSON.stringify(cards));
+  }, [cards]);
+
+  const handleGenerateAnswer = async () => {
+    if (!question.trim()) return;
+
+    try {
+      setIsGenerating(true);
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "AI生成に失敗しました");
+        return;
+      }
+
+      setAnswer(data.answer);
+    } catch (error) {
+      console.error(error);
+      alert("通信エラーが発生しました");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  const handleSave = () => {
+    if (!category.trim() || !question.trim() || !answer.trim()) return;
+    // 「問題か答え、どっちかでも空なら処理を止める」
+
+    const newCard: Card = {
+      id: Date.now(),
+      question,
+      answer,
+      category,
+      status: "new",
+    };
+    setCards((prev) => [...prev, newCard]);
+    setQuestion("");
+    setAnswer("");
+    setCategory("");
+  };
+  return (
+    <div className="max-w-xl mx-auto p-6">
+      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
+        <h1 className="text-2xl font-bold text-center text-pink-500">
+          問題追加
+        </h1>
+        <div>
+          <p className="mb-1 text-sm font-medium">問題</p>
+          <input
+            className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="問題を入力"
+          />
+        </div>
+
+        <div>
+          <button
+            className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+            onClick={handleGenerateAnswer}
+            disabled={isGenerating}
+          >
+            {isGenerating
+              ? "生成中..."
+              : answer
+                ? "もう一度生成"
+                : "AIで答え生成"}
+          </button>
+        </div>
+
+        <div>
+          <p className="mb-1 text-sm font-medium">答え</p>
+          <textarea
+            className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="答えを入力"
+          />
+        </div>
+
+        <div>
+          <p className="mb-1 text-sm font-medium">カテゴリー</p>
+          <input
+            className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            type="text"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="カテゴリーを入力"
+          />
+        </div>
+        <br />
+
+        <button
+          className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"
+          onClickCapture={handleSave}
+        >
+          保存
+        </button>
+
+        <Link
+          href="/cards"
+          className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+        >
+          問題一覧を見る
+        </Link>
+
+        <Link
+          href="/"
+          className="block text-center text-pink-500 hover:underline"
+        >
+          ホームへ戻る
+        </Link>
+      </div>
+    </div>
+  );
+}
