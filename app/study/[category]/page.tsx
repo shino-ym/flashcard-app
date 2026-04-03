@@ -123,31 +123,31 @@ export default function StudyPage() {
         <p className="text-sm text-pink-400 font-medium text-center">
           カテゴリー: {category}
         </p>
+        <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
+          <h1 className="text-3xl font-bold text-center text-gray-800 leading-relaxed">
+            {card.question}
+          </h1>
 
-        <h1 className="text-3xl font-bold text-center text-gray-800 leading-relaxed">
-          {card.question}
-        </h1>
+          {showAnswer && (
+            <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4">
+              <p className="whitespace-pre-line text-gray-700">{card.answer}</p>
+            </div>
+          )}
 
-        {showAnswer && (
-          <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4">
-            <p className="whitespace-pre-line text-gray-700">{card.answer}</p>
-          </div>
-        )}
+          <button
+            className="block mx-auto text-center bg-pink-400 hover:bg-pink-500 text-white font-semibold px-8 py-3 rounded-2xl transition"
+            onClick={() => setShowAnswer(!showAnswer)}
+          >
+            {showAnswer ? "答えを隠す" : "答えを見る"}
+          </button>
 
-        <button
-          className="block mx-auto text-center bg-pink-400 hover:bg-pink-500 text-white font-semibold px-8 py-3 rounded-2xl transition"
-          onClick={() => setShowAnswer(!showAnswer)}
-        >
-          {showAnswer ? "答えを隠す" : "答えを見る"}
-        </button>
-
-        <button
-          className="block mx-auto text-center  bg-green-100 hover:bg-green-200 text-gray-700 font-medium px-4 py-3 rounded-2xl transition"
-          onClick={() => toggleMastered(card.id)}
-        >
-          {card.status === "mastered" ? "未習得に戻す" : "💡覚えた！"}
-        </button>
-
+          <button
+            className="block mx-auto text-center  bg-green-100 hover:bg-green-200 text-gray-700 font-medium px-4 py-3 rounded-2xl transition"
+            onClick={() => toggleMastered(card.id)}
+          >
+            {card.status === "mastered" ? "未習得に戻す" : "💡覚えた！"}
+          </button>
+        </div>
         <p className="text-center text-sm text-gray-500">
           {safeIndex + 1} / {filteredCards.length}
         </p>
