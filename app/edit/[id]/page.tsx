@@ -29,7 +29,7 @@ export default function EditPage() {
         <div>
           <p className="text-center text-gray-500">問題が見つかりません</p>
           <Link href="/" className="block text-pink-500 hover:underline">
-            HOMEへ戻る
+            トップへ戻る
           </Link>
         </div>
       </div>
@@ -95,7 +95,7 @@ export default function EditPage() {
           href="/"
           className="block text-center text-pink-500 hover:underline"
         >
-          ホームへ戻る
+          トップへ戻る
         </Link>
       </main>
     </div>

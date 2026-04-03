@@ -153,7 +153,7 @@ export default function AddPage() {
           href="/"
           className="block text-center text-pink-500 hover:underline"
         >
-          ホームへ戻る
+          トップへ戻る
         </Link>
       </main>
     </div>

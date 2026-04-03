@@ -59,7 +59,7 @@ export default function StudyPage() {
             問題一覧を見る
           </Link>
           <Link href="/" className="block text-pink-500 hover:underline">
-            HOMEへ戻る
+            トップへ戻る
           </Link>
         </main>
       </div>
@@ -189,7 +189,7 @@ export default function StudyPage() {
           href="/"
           className="block text-center text-pink-500 hover:underline"
         >
-          HOMEへ戻る
+          トップへ戻る
         </Link>
       </main>
     </div>

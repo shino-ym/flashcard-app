@@ -120,7 +120,7 @@ export default function CardsCategoryPage() {
           href="/"
           className="block text-center text-pink-500 hover:underline"
         >
-          HOMEへ戻る
+          トップへ戻る
         </Link>
       </main>
     </div>

@@ -17,10 +17,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
-        <h1 className="text-3xl font-bold text-center text-pink-500">ホーム</h1>
+        <h1 className="text-3xl font-bold text-center text-pink-500">
+          Flashcard App
+        </h1>
+        <p className="text-center text-gray-500 text-sm">
+          AIで答えを生成して、そのまま学習できる！
+        </p>
 
         <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-center text-lg font-semibold text-gray-800">
             カテゴリーから学習
           </h2>
 
@@ -57,6 +62,7 @@ export default function Home() {
         >
           問題一覧を見る
         </Link>
+
       </main>
     </div>
   );
