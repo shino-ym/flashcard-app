@@ -33,25 +33,26 @@ export default function CardsPage() {
   );
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
-        <h1 className="text-2xl font-bold text-center text-pink-500">
+    <div className="min-h-screen bg-gray-50">
+      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
+        <h1 className="text-3xl font-bold text-center text-pink-500">
           カテゴリー別問題一覧
         </h1>
 
         {categories.length === 0 && (
           <p className="text-center text-gray-500">カテゴリーがありません</p>
         )}
-
-        {categories.map((cat) => (
-          <Link
-            key={cat}
-            href={`/cards/${cat}`}
-            className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
-          >
-            {cat}
-          </Link>
-        ))}
+        <div className="space-y-3">
+          {categories.map((cat) => (
+            <Link
+              key={cat}
+              href={`/cards/${cat}`}
+              className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+            >
+              {cat}
+            </Link>
+          ))}
+        </div>
 
         <Link
           href="/"
@@ -59,7 +60,7 @@ export default function CardsPage() {
         >
           HOMEへ戻る
         </Link>
-      </div>
+      </main>
     </div>
   );
 }

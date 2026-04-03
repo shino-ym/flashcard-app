@@ -15,24 +15,19 @@ export default function Home() {
   const categories = Array.from(new Set(cards.map((c) => c.category)));
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
-        <h1 className="text-2xl font-bold text-center text-pink-500">ホーム</h1>
+    <div className="min-h-screen bg-gray-50">
+      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
+        <h1 className="text-3xl font-bold text-center text-pink-500">ホーム</h1>
 
-        <Link
-          href="/add"
-          className="block text-center bg-pink-400 hover:bg-pink-500 text-white font-semibold py-3 rounded-2xl transition"
-        >
-          カードを追加
-        </Link>
+        <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-800">
+            カテゴリーから学習
+          </h2>
 
-        <div className="bg-white rounded-3xl shadow-md p-5 space-y-3">
-          <h2 className="text-lg font-semibold mb-3">カテゴリーから学習</h2>
-
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Link
               href="/study/all"
-              className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+              className="block w-full text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
             >
               すべて
             </Link>
@@ -41,7 +36,7 @@ export default function Home() {
               <Link
                 key={cat}
                 href={`/study/${cat}`}
-                className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+                className="block w-full text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
               >
                 {cat}
               </Link>
@@ -50,12 +45,19 @@ export default function Home() {
         </div>
 
         <Link
+          href="/add"
+          className="block text-center bg-pink-400 hover:bg-pink-500 text-white font-semibold px-8 py-3 rounded-2xl transition"
+        >
+          問題を追加
+        </Link>
+
+        <Link
           href="/cards"
           className="block text-center bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"
         >
-          カード一覧を見る
+          問題一覧を見る
         </Link>
-      </div>
+      </main>
     </div>
   );
 }

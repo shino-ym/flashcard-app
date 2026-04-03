@@ -46,21 +46,22 @@ export default function StudyPage() {
 
   if (filteredCards.length === 0) {
     return (
-      <div className="max-w-xl mx-auto p-6">
-        <div className="bg-white rounded-3xl shadow-md p-6 space-y-5 text-center">
-          <h1 className="text-xl font-bold text-pink-500">学習ページ</h1>
-          <p className="text-gray-600">{category} の学習問題がありません</p>
+      <div className="min-h-screen bg-gray-50">
+        <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
+          <h1 className="text-3xl font-bold text-center text-pink-500">学習ページ</h1>
+
+          <p className="text-center text-gray-500">{category} の学習問題がありません</p>
 
           <Link
             href="/cards"
             className="block text-center bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"
           >
-            カード一覧を見る
+            問題一覧を見る
           </Link>
           <Link href="/" className="block text-pink-500 hover:underline">
             HOMEへ戻る
           </Link>
-        </div>
+        </main>
       </div>
     );
   }
@@ -117,13 +118,13 @@ export default function StudyPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
+    <div className="min-h-screen bg-gray-50">
+      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
         <p className="text-sm text-pink-400 font-medium text-center">
           カテゴリー: {category}
         </p>
 
-        <h1 className="text-2xl font-bold text-center text-gray-800 leading-relaxed">
+        <h1 className="text-3xl font-bold text-center text-gray-800 leading-relaxed">
           {card.question}
         </h1>
 
@@ -134,27 +135,27 @@ export default function StudyPage() {
         )}
 
         <button
-          className="w-full bg-pink-400 hover:bg-pink-500 text-white font-semibold py-3 rounded-2xl transition"
+          className="block mx-auto text-center bg-pink-400 hover:bg-pink-500 text-white font-semibold px-8 py-3 rounded-2xl transition"
           onClick={() => setShowAnswer(!showAnswer)}
         >
           {showAnswer ? "答えを隠す" : "答えを見る"}
         </button>
 
         <button
-          className="w-full bg-green-100 hover:bg-green-200 text-gray-700 font-medium py-3 rounded-2xl transition"
+          className="block mx-auto text-center  bg-green-100 hover:bg-green-200 text-gray-700 font-medium px-4 py-3 rounded-2xl transition"
           onClick={() => toggleMastered(card.id)}
         >
-          {card.status === "mastered" ? "未習得に戻す" : "覚えた"}
+          {card.status === "mastered" ? "未習得に戻す" : "💡覚えた！"}
         </button>
 
         <p className="text-center text-sm text-gray-500">
           {safeIndex + 1} / {filteredCards.length}
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex gap-flex gap-3 justify-center">
           {filteredCards.length > 1 && (
             <button
-              className="flex-1 bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+              className="bg-pink-100 hover:bg-pink-200 px-6 py-3 rounded-2xl transition"
               onClick={prevCard}
             >
               前へ
@@ -162,7 +163,7 @@ export default function StudyPage() {
           )}
 
           <button
-            className="flex-1 bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+            className="bg-pink-100 hover:bg-pink-200 px-6 py-3 rounded-2xl transition"
             onClick={nextCard}
           >
             次へ
@@ -190,7 +191,7 @@ export default function StudyPage() {
         >
           HOMEへ戻る
         </Link>
-      </div>
+      </main>
     </div>
   );
 }

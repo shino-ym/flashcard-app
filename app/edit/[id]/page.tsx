@@ -27,7 +27,7 @@ export default function EditPage() {
     return (
       <div className="max-w-xl mx-auto p-6">
         <div>
-          <p className="text-gray-600">問題が見つかりません</p>
+          <p className="text-center text-gray-500">問題が見つかりません</p>
           <Link href="/" className="block text-pink-500 hover:underline">
             HOMEへ戻る
           </Link>
@@ -55,13 +55,13 @@ export default function EditPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
-        <h1 className="text-2xl font-bold text-center text-pink-500">
+    <div className="min-h-screen bg-gray-50">
+      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
+        <h1 className="text-3xl font-bold text-center text-pink-500">
           カード編集
         </h1>
 
-        <p className="mb-1 text-sm font-medium">問題</p>
+        <p className="mb-3 text-1xl font-bold">問題</p>
         <input
           className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
           type="text"
@@ -69,15 +69,14 @@ export default function EditPage() {
           onChange={(e) => setQuestion(e.target.value)}
         />
 
-        <p className="mb-1 text-sm font-medium">答え</p>
-        <br />
+        <p className="mb-3 text-1xl font-bold">答え</p>
         <textarea
           className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
         />
 
-        <p className="mb-1 text-sm font-medium">カテゴリー</p>
+        <p className="mb-3 text-1xl font-bold">カテゴリー</p>
         <input
           className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
           type="text"
@@ -92,16 +91,13 @@ export default function EditPage() {
           保存
         </button>
 
-        <br />
-        <br />
-
         <Link
           href="/"
           className="block text-center text-pink-500 hover:underline"
         >
           ホームへ戻る
         </Link>
-      </div>
+      </main>
     </div>
   );
 }

@@ -65,13 +65,15 @@ export default function CardsCategoryPage() {
     );
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
-        <h1 className="text-2xl font-bold text-center text-pink-500">
+    <div className="min-h-screen bg-gray-50">
+      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
+        <h1 className="text-3xl font-bold text-center text-pink-500">
           {category}の問題一覧
         </h1>
 
-        {filteredCards.length === 0 && <p>問題がありません</p>}
+        {filteredCards.length === 0 && (
+          <p className="text-center text-gray-500">問題がありません</p>
+        )}
 
         {filteredCards.map((card) => (
           <div
@@ -79,39 +81,40 @@ export default function CardsCategoryPage() {
             className="bg-white rounded-3xl shadow-md p-5 space-y-3"
           >
             <div>
-              <p className="text-lg font-semibold">{card.question}</p>
+              <p className="text-lg text-center font-semibold">
+                {card.question}
+              </p>
             </div>
 
-            <button
-              className="bg-pink-100 hover:bg-pink-200 px-4 py-2 rounded-2xl"
-              onClick={() => router.push(`/edit/${card.id}`)}
-            >
-              編集
-            </button>
-
-            <button
-              className="bg-green-100 hover:bg-green-200 px-4 py-2 rounded-2xl"
-              onClick={() => toggleMastered(card.id)}
-            >
-              {card.status === "mastered" ? "未習得に戻す" : "覚えた"}
-            </button>
-
-            <button
-              className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-2xl"
-              onClick={() => deleteCard(card.id)}
-            >
-              削除
-            </button>
+            <div className="flex justify-center gap-3 text-center">
+              <button
+                className="bg-pink-100 hover:bg-pink-200 px-4 py-2 rounded-2xl"
+                onClick={() => router.push(`/edit/${card.id}`)}
+              >
+                編集
+              </button>
+              <button
+                className="bg-green-100 hover:bg-green-200 px-4 py-2 rounded-2xl"
+                onClick={() => toggleMastered(card.id)}
+              >
+                {card.status === "mastered" ? "未習得に戻す" : "覚えた"}
+              </button>
+              <button
+                className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-2xl"
+                onClick={() => deleteCard(card.id)}
+              >
+                削除
+              </button>
+            </div>
           </div>
         ))}
 
         <button
-          className="bg-purple-100 hover:bg-purple-200 px-4 py-2 rounded-2xl"
+          className="block mx-auto bg-purple-100 hover:bg-purple-200 px-4 py-2 rounded-2xl"
           onClick={() => router.push(`/study/${category}`)}
         >
           このカテゴリーを勉強する
         </button>
-        <br />
 
         <Link
           href="/"
@@ -119,7 +122,7 @@ export default function CardsCategoryPage() {
         >
           HOMEへ戻る
         </Link>
-      </div>
+      </main>
     </div>
   );
 }

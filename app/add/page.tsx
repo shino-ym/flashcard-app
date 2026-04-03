@@ -83,13 +83,13 @@ export default function AddPage() {
     setCategory("");
   };
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <div className="bg-white rounded-3xl shadow-md p-6 space-y-5">
-        <h1 className="text-2xl font-bold text-center text-pink-500">
+    <div className="min-h-screen bg-gray-50">
+      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
+        <h1 className="text-3xl font-bold text-center text-pink-500">
           問題追加
         </h1>
         <div>
-          <p className="mb-1 text-sm font-medium">問題</p>
+          <p className="mb-3 text-1xl font-bold">問題</p>
           <input
             className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
             type="text"
@@ -101,7 +101,7 @@ export default function AddPage() {
 
         <div>
           <button
-            className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+            className="block text-center bg-pink-100 hover:bg-pink-200 px-4 py-4 rounded-3xl transition"
             onClick={handleGenerateAnswer}
             disabled={isGenerating}
           >
@@ -114,7 +114,7 @@ export default function AddPage() {
         </div>
 
         <div>
-          <p className="mb-1 text-sm font-medium">答え</p>
+          <p className="mb-3 text-1xl font-bold">答え</p>
           <textarea
             className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
             value={answer}
@@ -124,7 +124,7 @@ export default function AddPage() {
         </div>
 
         <div>
-          <p className="mb-1 text-sm font-medium">カテゴリー</p>
+          <p className="mb-3 text-1xl font-bold">カテゴリー</p>
           <input
             className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
             type="text"
@@ -155,7 +155,7 @@ export default function AddPage() {
         >
           ホームへ戻る
         </Link>
-      </div>
+      </main>
     </div>
   );
 }
