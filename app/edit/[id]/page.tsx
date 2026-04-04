@@ -14,7 +14,22 @@ export default function EditPage() {
     if (typeof window === "undefined") return [];
 
     const saved = localStorage.getItem("cards");
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+
+    const parsed: unknown = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((card): Card => {
+      const item = card as Partial<Card>;
+
+      return {
+        id: item.id ?? Date.now(),
+        category: item.category ?? "",
+        question: item.question ?? "",
+        answer: item.answer ?? "",
+        status: item.status === "mastered" ? "mastered" : "new",
+      };
+    });
   });
 
   const targetCard = cards.find((c) => c.id === cardId);
@@ -28,7 +43,10 @@ export default function EditPage() {
       <div className="max-w-xl mx-auto p-6">
         <div>
           <p className="text-center text-gray-500">問題が見つかりません</p>
-          <Link href="/" className="block text-pink-500 hover:underline">
+          <Link
+            href="/"
+            className="block text-center text-pink-500 hover:underline"
+          >
             トップへ戻る
           </Link>
         </div>
@@ -37,21 +55,27 @@ export default function EditPage() {
   }
 
   const handleSave = () => {
-    if (!question.trim() || !answer.trim()) return;
+    const trimmedQuestion = question.trim();
+    const trimmedAnswer = answer.trim();
+    const trimmedCategory = category.trim();
+
+    if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
 
     const updatedCard: Card = {
       ...targetCard,
-      question,
-      answer,
-      category,
+      question: trimmedQuestion,
+      answer: trimmedAnswer,
+      category: trimmedCategory,
     };
 
-    const updatedCards = cards.map((c) => (c.id === cardId ? updatedCard : c));
+    const updatedCards: Card[] = cards.map((c) =>
+      c.id === cardId ? updatedCard : c,
+    );
 
     setCards(updatedCards);
     localStorage.setItem("cards", JSON.stringify(updatedCards));
 
-    router.push("/");
+    router.push(`/cards/${encodeURIComponent(trimmedCategory)}`);
   };
 
   return (
@@ -61,28 +85,34 @@ export default function EditPage() {
           カード編集
         </h1>
 
-        <p className="mb-3 text-1xl font-bold">問題</p>
-        <input
-          className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-        />
+        <div>
+          <p className="mb-3 text-xl font-bold">問題</p>
+          <input
+            className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+          />
+        </div>
 
-        <p className="mb-3 text-1xl font-bold">答え</p>
-        <textarea
-          className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-        />
+        <div>
+          <p className="mb-3 text-xl font-bold">答え</p>
+          <textarea
+            className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+          />
+        </div>
 
-        <p className="mb-3 text-1xl font-bold">カテゴリー</p>
-        <input
-          className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
-          type="text"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        />
+        <div>
+          <p className="mb-3 text-xl font-bold">カテゴリー</p>
+          <input
+            className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            type="text"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
+        </div>
 
         <button
           className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"

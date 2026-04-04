@@ -8,7 +8,7 @@ import { Card } from "@/types/card";
 export default function StudyPage() {
   const params = useParams();
   const router = useRouter();
-  const category = String(params.category);
+  const category = decodeURIComponent(String(params.category));
 
   const [cards, setCards] = useState<Card[]>(() => {
     if (typeof window === "undefined") return [];
@@ -173,7 +173,9 @@ export default function StudyPage() {
         <div className="flex justify-center gap-3 pt-2">
           <button
             className="text-sm text-gray-400 hover:text-gray-600"
-            onClick={() => router.push(`/edit/${card.id}`)}
+            onClick={() => 
+              router.push(`/edit/${card.id}`)
+            }
           >
             編集
           </button>

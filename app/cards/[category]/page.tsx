@@ -9,7 +9,7 @@ import { useParams } from "next/navigation";
 export default function CardsCategoryPage() {
   const router = useRouter();
   const params = useParams();
-  const category = String(params.category);
+  const category = decodeURIComponent(String(params.category));
 
   const [cards, setCards] = useState<Card[]>(() => {
     if (typeof window === "undefined") return [];
@@ -61,7 +61,8 @@ export default function CardsCategoryPage() {
   };
     
     const filteredCards = cards.filter(
-      (card) => card.category.toLowerCase() === category.toLowerCase(),
+      (card) =>
+        card.category.trim().toLowerCase() === category.trim().toLowerCase(),
     );
 
   return (
