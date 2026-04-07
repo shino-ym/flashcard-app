@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/types/card";
@@ -10,28 +10,40 @@ export default function StudyPage() {
   const router = useRouter();
   const category = decodeURIComponent(String(params.category));
 
-  const [cards, setCards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
+  const [cards, setCards] = useState<Card[]>([]);
+  const [index, setIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
+  const fetchCards = async () => {
+    try {
+      const res = await fetch("http://localhost/api/cards");
 
-    const parsed: unknown = JSON.parse(saved);
+      if (!res.ok) {
+        throw new Error("カード取得に失敗しました");
+      }
 
-    if (!Array.isArray(parsed)) return [];
+      const data = await res.json();
 
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
+      const normalizedCards: Card[] = data.map((card: Partial<Card>) => ({
+        id: card.id ?? Date.now(),
+        category: card.category ?? "",
+        question: card.question ?? "",
+        answer: card.answer ?? "",
+        status: card.status === "mastered" ? "mastered" : "new",
+      }));
 
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
+      setCards(normalizedCards);
+    } catch (error) {
+      console.error("取得エラー:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCards();
+  }, []);
 
   const filteredCards =
     category.toLowerCase() === "all"
@@ -41,16 +53,102 @@ export default function StudyPage() {
             card.category.toLowerCase() === category.toLowerCase() &&
             card.status !== "mastered",
         );
-  const [index, setIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
+
+  const safeIndex = index >= filteredCards.length ? 0 : index;
+  const card = filteredCards[safeIndex];
+
+  const nextCard = () => {
+    setIndex((prev) => (prev + 1) % filteredCards.length);
+    setShowAnswer(false);
+  };
+
+  const prevCard = () => {
+    setIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1));
+    setShowAnswer(false);
+  };
+
+  const toggleMastered = async (id: number) => {
+    const targetCard = cards.find((c) => c.id === id);
+    if (!targetCard) return;
+
+    const newStatus: Card["status"] =
+      targetCard.status === "mastered" ? "new" : "mastered";
+
+    try {
+      const res = await fetch(`http://localhost/api/cards/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: targetCard.question,
+          answer: targetCard.answer,
+          category: targetCard.category,
+          status: newStatus,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("更新に失敗しました");
+      }
+
+      await fetchCards();
+
+      if (safeIndex >= filteredCards.length - 1 && filteredCards.length > 1) {
+        setIndex(0);
+      }
+
+      setShowAnswer(false);
+    } catch (error) {
+      console.error("更新エラー:", error);
+      alert("更新に失敗しました");
+    }
+  };
+
+  const deleteCard = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost/api/cards/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("削除に失敗しました");
+      }
+
+      await fetchCards();
+
+      if (safeIndex >= filteredCards.length - 1 && filteredCards.length > 1) {
+        setIndex(0);
+      }
+
+      setShowAnswer(false);
+    } catch (error) {
+      console.error("削除エラー:", error);
+      alert("削除に失敗しました");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <main className="mx-auto w-full max-w-md px-4 py-6">
+          <p className="text-center text-gray-500">読み込み中...</p>
+        </main>
+      </div>
+    );
+  }
 
   if (filteredCards.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
-          <h1 className="text-3xl font-bold text-center text-pink-500">学習ページ</h1>
+          <h1 className="text-3xl font-bold text-center text-pink-500">
+            学習ページ
+          </h1>
 
-          <p className="text-center text-gray-500">{category} の学習問題がありません</p>
+          <p className="text-center text-gray-500">
+            {category} の学習問題がありません
+          </p>
 
           <Link
             href="/cards"
@@ -66,63 +164,13 @@ export default function StudyPage() {
     );
   }
 
-  const safeIndex = index >= filteredCards.length ? 0 : index;
-  const card = filteredCards[safeIndex];
-
-  const saveCards = (updatedCards: Card[]) => {
-    setCards(updatedCards);
-    localStorage.setItem("cards", JSON.stringify(updatedCards));
-  };
-
-  const nextCard = () => {
-    setIndex((prev) => (prev + 1) % filteredCards.length);
-    setShowAnswer(false);
-  };
-
-  const prevCard = () => {
-    setIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1));
-    setShowAnswer(false);
-  };
-
-  const toggleMastered = (id: number) => {
-    const updatedCards: Card[] = cards.map((c) => {
-      if (c.id !== id) return c;
-
-      const newStatus: Card["status"] =
-        c.status === "mastered" ? "new" : "mastered";
-
-      return {
-        ...c,
-        status: newStatus,
-      };
-    });
-
-    saveCards(updatedCards);
-
-    if (safeIndex >= filteredCards.length - 1 && filteredCards.length > 1) {
-      setIndex(0);
-    }
-
-    setShowAnswer(false);
-  };
-
-  const deleteCard = (id: number) => {
-    const updatedCards = cards.filter((c) => c.id !== id);
-    saveCards(updatedCards);
-
-    if (safeIndex >= filteredCards.length - 1 && filteredCards.length > 1) {
-      setIndex(0);
-    }
-
-    setShowAnswer(false);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
         <p className="text-sm text-pink-400 font-medium text-center">
           カテゴリー: {category}
         </p>
+
         <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
           <h1 className="text-3xl font-bold text-center text-gray-800 leading-relaxed">
             {card.question}
@@ -142,17 +190,18 @@ export default function StudyPage() {
           </button>
 
           <button
-            className="block mx-auto text-center  bg-green-100 hover:bg-green-200 text-gray-700 font-medium px-4 py-3 rounded-2xl transition"
+            className="block mx-auto text-center bg-green-100 hover:bg-green-200 text-gray-700 font-medium px-4 py-3 rounded-2xl transition"
             onClick={() => toggleMastered(card.id)}
           >
             {card.status === "mastered" ? "未習得に戻す" : "💡覚えた！"}
           </button>
         </div>
+
         <p className="text-center text-sm text-gray-500">
           {safeIndex + 1} / {filteredCards.length}
         </p>
 
-        <div className="flex gap-flex gap-3 justify-center">
+        <div className="flex gap-3 justify-center">
           {filteredCards.length > 1 && (
             <button
               className="bg-pink-100 hover:bg-pink-200 px-6 py-3 rounded-2xl transition"
@@ -173,9 +222,7 @@ export default function StudyPage() {
         <div className="flex justify-center gap-3 pt-2">
           <button
             className="text-sm text-gray-400 hover:text-gray-600"
-            onClick={() => 
-              router.push(`/edit/${card.id}`)
-            }
+            onClick={() => router.push(`/edit/${card.id}`)}
           >
             編集
           </button>
@@ -187,6 +234,7 @@ export default function StudyPage() {
             削除
           </button>
         </div>
+
         <Link
           href="/"
           className="block text-center text-pink-500 hover:underline"

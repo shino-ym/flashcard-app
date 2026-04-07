@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/types/card";
 
@@ -10,33 +10,97 @@ export default function EditPage() {
   const router = useRouter();
   const cardId = Number(params.id);
 
-  const [cards, setCards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
+  const [targetCard, setTargetCard] = useState<Card | null>(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [category, setCategory] = useState("");
+  const [loading, setLoading] = useState(true);
 
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        const res = await fetch("http://localhost/api/cards");
 
-    const parsed: unknown = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return [];
+        if (!res.ok) {
+          throw new Error("カード取得に失敗しました");
+        }
 
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
+        const data = await res.json();
 
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
+        const foundCard = data.find((card: Card) => card.id === cardId);
 
-  const targetCard = cards.find((c) => c.id === cardId);
+        if (!foundCard) {
+          setLoading(false);
+          return;
+        }
 
-  const [question, setQuestion] = useState(targetCard?.question || "");
-  const [answer, setAnswer] = useState(targetCard?.answer || "");
-  const [category, setCategory] = useState(targetCard?.category || "");
+        const normalizedCard: Card = {
+          id: foundCard.id,
+          category: foundCard.category ?? "",
+          question: foundCard.question ?? "",
+          answer: foundCard.answer ?? "",
+          status: foundCard.status === "mastered" ? "mastered" : "new",
+        };
+
+        setTargetCard(normalizedCard);
+        setQuestion(normalizedCard.question);
+        setAnswer(normalizedCard.answer);
+        setCategory(normalizedCard.category);
+      } catch (error) {
+        console.error("取得エラー:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCards();
+  }, [cardId]);
+
+  const handleSave = async () => {
+    const trimmedQuestion = question.trim();
+    const trimmedAnswer = answer.trim();
+    const trimmedCategory = category.trim();
+
+    if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory || !targetCard) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost/api/cards/${cardId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: trimmedQuestion,
+          answer: trimmedAnswer,
+          category: trimmedCategory,
+          status: targetCard.status,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("更新に失敗しました");
+        console.error(data);
+        return;
+      }
+
+      router.push(`/cards/${encodeURIComponent(trimmedCategory)}`);
+    } catch (error) {
+      console.error("更新エラー:", error);
+      alert("通信エラーが発生しました");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto p-6">
+        <p className="text-center text-gray-500">読み込み中...</p>
+      </div>
+    );
+  }
 
   if (!targetCard) {
     return (
@@ -53,30 +117,6 @@ export default function EditPage() {
       </div>
     );
   }
-
-  const handleSave = () => {
-    const trimmedQuestion = question.trim();
-    const trimmedAnswer = answer.trim();
-    const trimmedCategory = category.trim();
-
-    if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
-
-    const updatedCard: Card = {
-      ...targetCard,
-      question: trimmedQuestion,
-      answer: trimmedAnswer,
-      category: trimmedCategory,
-    };
-
-    const updatedCards: Card[] = cards.map((c) =>
-      c.id === cardId ? updatedCard : c,
-    );
-
-    setCards(updatedCards);
-    localStorage.setItem("cards", JSON.stringify(updatedCards));
-
-    router.push(`/cards/${encodeURIComponent(trimmedCategory)}`);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">

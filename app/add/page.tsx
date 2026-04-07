@@ -1,41 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Card } from "@/types/card";
 
 export default function AddPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [category, setCategory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const [cards, setCards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
-
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
-
-    const parsed: unknown = JSON.parse(saved);
-
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
-
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
-
-  useEffect(() => {
-    localStorage.setItem("cards", JSON.stringify(cards));
-  }, [cards]);
 
   const handleGenerateAnswer = async () => {
     if (!question.trim()) return;
@@ -66,28 +38,49 @@ export default function AddPage() {
       setIsGenerating(false);
     }
   };
-  const handleSave = () => {
-    if (!category.trim() || !question.trim() || !answer.trim()) return;
-    // 「問題か答え、どっちかでも空なら処理を止める」
 
-    const newCard: Card = {
-      id: Date.now(),
-      question,
-      answer,
-      category,
-      status: "new",
-    };
-    setCards((prev) => [...prev, newCard]);
-    setQuestion("");
-    setAnswer("");
-    setCategory("");
+  const handleSave = async () => {
+    if (!category.trim() || !question.trim() || !answer.trim()) return;
+
+    try {
+      const res = await fetch("http://localhost/api/cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question,
+          answer,
+          category,
+          status: "new",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("保存に失敗しました");
+        console.error(data);
+        return;
+      }
+
+      setQuestion("");
+      setAnswer("");
+      setCategory("");
+      alert("保存しました");
+    } catch (error) {
+      console.error(error);
+      alert("通信エラーが発生しました");
+    }
   };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
         <h1 className="text-3xl font-bold text-center text-pink-500">
           問題追加
         </h1>
+
         <div>
           <p className="mb-3 text-1xl font-bold">問題</p>
           <input
@@ -133,11 +126,10 @@ export default function AddPage() {
             placeholder="カテゴリーを入力"
           />
         </div>
-        <br />
 
         <button
           className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"
-          onClickCapture={handleSave}
+          onClick={handleSave}
         >
           保存
         </button>

@@ -1,32 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/types/card";
 
 export default function CardsPage() {
-  const [cards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
+  const [cards, setCards] = useState<Card[]>([]);
 
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
+  useEffect(() => {
+    const fetchCards = async () => {
+      const res = await fetch("http://localhost/api/cards");
+      const data = await res.json();
 
-    const parsed: unknown = JSON.parse(saved);
+      setCards(data);
+    };
 
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
-
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
+    fetchCards();
+  }, []);
 
   const categories = Array.from(
     new Set(cards.map((c) => c.category).filter((cat) => cat.trim() !== "")),
