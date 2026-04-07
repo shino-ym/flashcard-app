@@ -1,22 +1,17 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/types/card";
 
 export default function Home() {
-const [cards, setCards] = useState<Card[]>([]);
+  const [cards] = useState<Card[]>(() => {
+    if (typeof window === "undefined") return [];
 
-useEffect(() => {
-  const fetchCards = async () => {
-    const res = await fetch("http://localhost/api/cards");
-    const data = await res.json();
+    const saved = localStorage.getItem("cards");
+    return saved ? JSON.parse(saved) : [];
+  });
 
-    setCards(data);
-  };
-
-  fetchCards();
-}, []);
   const categories = Array.from(new Set(cards.map((c) => c.category)));
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Card } from "@/types/card";
@@ -10,99 +10,59 @@ export default function CardsCategoryPage() {
   const params = useParams();
   const category = decodeURIComponent(String(params.category));
 
-  const [cards, setCards] = useState<Card[]>([]);
+  const [cards, setCards] = useState<Card[]>(() => {
+    if (typeof window === "undefined") return [];
 
-  useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const res = await fetch("http://localhost/api/cards");
-        if (!res.ok) {
-          throw new Error("カード一覧の取得に失敗しました");
-        }
+    const saved = localStorage.getItem("cards");
+    if (!saved) return [];
 
-        const data = await res.json();
+    const parsed: unknown = JSON.parse(saved);
 
-        const normalizedCards: Card[] = data.map((card: Partial<Card>) => ({
-          id: card.id ?? Date.now(),
-          category: card.category ?? "",
-          question: card.question ?? "",
-          answer: card.answer ?? "",
-          status:
-            card.status === "mastered"
-              ? "mastered"
-              : "new",
-        }));
+    if (!Array.isArray(parsed)) return [];
 
-        setCards(normalizedCards);
-      } catch (error) {
-        console.error("取得エラー:", error);
-      }
-    };
+    return parsed.map((card): Card => {
+      const item = card as Partial<Card>;
 
-    fetchCards();
-  }, []);
+      return {
+        id: item.id ?? Date.now(),
+        category: item.category ?? "",
+        question: item.question ?? "",
+        answer: item.answer ?? "",
+        status: item.status === "mastered" ? "mastered" : "new",
+      };
+    });
+  });
 
-  const toggleMastered = async (id: number) => {
-    const targetCard = cards.find((c) => c.id === id);
-    if (!targetCard) return;
-
-    const newStatus: Card["status"] =
-      targetCard.status === "mastered" ? "new" : "mastered";
-
-    try {
-      const res = await fetch(`http://localhost/api/cards/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          category: targetCard.category,
-          question: targetCard.question,
-          answer: targetCard.answer,
-          status: newStatus,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("ステータス更新に失敗しました");
-      }
-
-      setCards((prev) =>
-        prev.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                status: newStatus,
-              }
-            : c,
-        ),
-      );
-    } catch (error) {
-      console.error("更新エラー:", error);
-    }
+  const saveCards = (updatedCards: Card[]) => {
+    setCards(updatedCards);
+    localStorage.setItem("cards", JSON.stringify(updatedCards));
   };
 
-  const deleteCard = async (id: number) => {
-    try {
-      const res = await fetch(`http://localhost/api/cards/${id}`, {
-        method: "DELETE",
-      });
+  const toggleMastered = (id: number) => {
+    const updatedCards: Card[] = cards.map((c) => {
+      if (c.id !== id) return c;
 
-      if (!res.ok) {
-        throw new Error("削除に失敗しました");
-      }
+      const newStatus: Card["status"] =
+        c.status === "mastered" ? "new" : "mastered";
 
-      setCards((prev) => prev.filter((c) => c.id !== id));
-    } catch (error) {
-      console.error("削除エラー:", error);
-    }
+      return {
+        ...c,
+        status: newStatus,
+      };
+    });
+
+    saveCards(updatedCards);
   };
 
-  const filteredCards = cards.filter(
-    (card) =>
-      card.category.trim().toLowerCase() === category.trim().toLowerCase(),
-  );
-
+  const deleteCard = (id: number) => {
+    const remaining: Card[] = cards.filter((c) => c.id !== id);
+    saveCards(remaining);
+  };
+    
+    const filteredCards = cards.filter(
+      (card) =>
+        card.category.trim().toLowerCase() === category.trim().toLowerCase(),
+    );
 
   return (
     <div className="min-h-screen bg-gray-50">
