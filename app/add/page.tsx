@@ -1,41 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Card } from "@/types/card";
+import { useRouter } from "next/navigation";
+
+function getCookie(name: string) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return decodeURIComponent(parts.pop()!.split(";").shift()!);
+  }
+  return null;
+}
 
 export default function AddPage() {
+  const router = useRouter();
+
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [category, setCategory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const [cards, setCards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
-
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
-
-    const parsed: unknown = JSON.parse(saved);
-
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
-
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
-
-  useEffect(() => {
-    localStorage.setItem("cards", JSON.stringify(cards));
-  }, [cards]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleGenerateAnswer = async () => {
     if (!question.trim()) return;
@@ -66,42 +51,84 @@ export default function AddPage() {
       setIsGenerating(false);
     }
   };
-  const handleSave = () => {
-    if (!category.trim() || !question.trim() || !answer.trim()) return;
-    // 「問題か答え、どっちかでも空なら処理を止める」
 
-    const newCard: Card = {
-      id: Date.now(),
-      question,
-      answer,
-      category,
-      status: "new",
-    };
-    setCards((prev) => [...prev, newCard]);
-    setQuestion("");
-    setAnswer("");
-    setCategory("");
+  const handleSave = async () => {
+    if (!category.trim() || !question.trim() || !answer.trim()) return;
+
+    try {
+      setIsSaving(true);
+
+      const csrfRes = await fetch("http://localhost/sanctum/csrf-cookie", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!csrfRes.ok) {
+        alert("CSRF Cookie取得に失敗しました");
+        return;
+      }
+
+      const xsrfToken = getCookie("XSRF-TOKEN");
+
+      if (!xsrfToken) {
+        alert("XSRF-TOKENが取得できません");
+        return;
+      }
+
+      const res = await fetch("http://localhost/api/cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-XSRF-TOKEN": xsrfToken,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          category,
+          question,
+          answer,
+          status: "new",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "保存に失敗しました");
+        return;
+      }
+
+      setQuestion("");
+      setAnswer("");
+      setCategory("");
+
+    } catch (error) {
+      console.error(error);
+      alert("通信エラーが発生しました");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
-        <h1 className="text-3xl font-bold text-center text-pink-500">
+      <main className="mx-auto w-full max-w-md space-y-6 px-4 py-6">
+        <h1 className="text-center text-3xl font-bold text-pink-500">
           問題追加
         </h1>
-        <div>
+
+        <div className="space-y-4 rounded-3xl bg-white p-5 shadow-md">
           <p className="mb-3 text-1xl font-bold">問題</p>
           <input
-            className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="w-full rounded-2xl border border-pink-200 p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="問題を入力"
           />
-        </div>
 
-        <div>
           <button
-            className="block text-center bg-pink-100 hover:bg-pink-200 px-4 py-4 rounded-3xl transition"
+            className="block rounded-3xl bg-pink-100 px-4 py-4 text-center transition hover:bg-pink-200 disabled:opacity-50"
             onClick={handleGenerateAnswer}
             disabled={isGenerating}
           >
@@ -111,40 +138,36 @@ export default function AddPage() {
                 ? "もう一度生成"
                 : "AIで答え生成"}
           </button>
-        </div>
 
-        <div>
           <p className="mb-3 text-1xl font-bold">答え</p>
           <textarea
-            className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="min-h-[120px] w-full rounded-2xl border border-pink-200 p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="答えを入力"
           />
-        </div>
 
-        <div>
           <p className="mb-3 text-1xl font-bold">カテゴリー</p>
           <input
-            className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="w-full rounded-2xl border border-pink-200 p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
             type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="カテゴリーを入力"
           />
-        </div>
-        <br />
 
-        <button
-          className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"
-          onClickCapture={handleSave}
-        >
-          保存
-        </button>
+          <button
+            className="w-full rounded-2xl bg-rose-500 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:opacity-50"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? "保存中..." : "保存"}
+          </button>
+        </div>
 
         <Link
           href="/cards"
-          className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+          className="block rounded-2xl bg-pink-100 py-3 text-center transition hover:bg-pink-200"
         >
           問題一覧を見る
         </Link>

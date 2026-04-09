@@ -1,42 +1,135 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/types/card";
+
+function getCookie(name: string) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return decodeURIComponent(parts.pop()!.split(";").shift()!);
+  }
+  return null;
+}
 
 export default function EditPage() {
   const params = useParams();
   const router = useRouter();
   const cardId = Number(params.id);
 
-  const [cards, setCards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
+  const [targetCard, setTargetCard] = useState<Card | null>(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [category, setCategory] = useState("");
+  const [message, setMessage] = useState("読み込み中...");
+  const [isSaving, setIsSaving] = useState(false);
 
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
+  useEffect(() => {
+    const fetchCard = async () => {
+      try {
+        const res = await fetch("http://localhost/api/cards", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+        });
 
-    const parsed: unknown = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return [];
+        const data = await res.json();
 
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
+        if (!res.ok) {
+          setMessage(data.message || "カード取得失敗");
+          return;
+        }
 
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
+        const foundCard = data.find((card: Card) => card.id === cardId);
 
-  const targetCard = cards.find((c) => c.id === cardId);
+        if (!foundCard) {
+          setMessage("問題が見つかりません");
+          return;
+        }
 
-  const [question, setQuestion] = useState(targetCard?.question || "");
-  const [answer, setAnswer] = useState(targetCard?.answer || "");
-  const [category, setCategory] = useState(targetCard?.category || "");
+        setTargetCard(foundCard);
+        setQuestion(foundCard.question);
+        setAnswer(foundCard.answer);
+        setCategory(foundCard.category);
+        setMessage("");
+      } catch (error) {
+        console.error(error);
+        setMessage("通信エラーが発生しました");
+      }
+    };
+
+    fetchCard();
+  }, [cardId]);
+
+
+
+  const handleSave = async () => {
+    const trimmedQuestion = question.trim();
+    const trimmedAnswer = answer.trim();
+    const trimmedCategory = category.trim();
+
+    if (!targetCard) return;
+    if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
+
+    try {
+      setIsSaving(true);
+
+      await fetch("http://localhost/sanctum/csrf-cookie", {
+        credentials: "include",
+      });
+
+      const xsrfToken = getCookie("XSRF-TOKEN");
+
+      if (!xsrfToken) {
+        alert("XSRF-TOKENが取得できません");
+        return;
+      }
+
+      const res = await fetch(`http://localhost/api/cards/${cardId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-XSRF-TOKEN": xsrfToken,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          category: trimmedCategory,
+          question: trimmedQuestion,
+          answer: trimmedAnswer,
+          status: targetCard.status,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "保存失敗");
+        return;
+      }
+
+      router.push(`/cards/${encodeURIComponent(trimmedCategory)}`);
+    } catch (error) {
+      console.error(error);
+      alert("通信エラーが発生しました");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (message) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <main className="mx-auto w-full max-w-md px-4 py-6">
+          <p className="text-center text-gray-500">{message}</p>
+        </main>
+      </div>
+    );
+  }
 
   if (!targetCard) {
     return (
@@ -53,30 +146,6 @@ export default function EditPage() {
       </div>
     );
   }
-
-  const handleSave = () => {
-    const trimmedQuestion = question.trim();
-    const trimmedAnswer = answer.trim();
-    const trimmedCategory = category.trim();
-
-    if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
-
-    const updatedCard: Card = {
-      ...targetCard,
-      question: trimmedQuestion,
-      answer: trimmedAnswer,
-      category: trimmedCategory,
-    };
-
-    const updatedCards: Card[] = cards.map((c) =>
-      c.id === cardId ? updatedCard : c,
-    );
-
-    setCards(updatedCards);
-    localStorage.setItem("cards", JSON.stringify(updatedCards));
-
-    router.push(`/cards/${encodeURIComponent(trimmedCategory)}`);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,10 +184,11 @@ export default function EditPage() {
         </div>
 
         <button
-          className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition"
+          className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-2xl transition disabled:opacity-50"
           onClick={handleSave}
+          disabled={isSaving}
         >
-          保存
+          {isSaving ? "保存中..." : "保存"}
         </button>
 
         <Link

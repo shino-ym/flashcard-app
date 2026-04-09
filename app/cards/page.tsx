@@ -1,53 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/types/card";
 
 export default function CardsPage() {
-  const [cards] = useState<Card[]>(() => {
-    if (typeof window === "undefined") return [];
+  const [cards, setCards] = useState<Card[]>([]);
+  const [message, setMessage] = useState("読み込み中...");
 
-    const saved = localStorage.getItem("cards");
-    if (!saved) return [];
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        const res = await fetch("http://localhost/api/cards", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+        });
 
-    const parsed: unknown = JSON.parse(saved);
+        const data = await res.json();
 
-    if (!Array.isArray(parsed)) return [];
+        if (!res.ok) {
+          setMessage(data.message || "カード取得失敗");
+          return;
+        }
 
-    return parsed.map((card): Card => {
-      const item = card as Partial<Card>;
+        setCards(data);
+        setMessage("");
+      } catch (error) {
+        console.error(error);
+        setMessage("通信エラーが発生しました");
+      }
+    };
 
-      return {
-        id: item.id ?? Date.now(),
-        category: item.category ?? "",
-        question: item.question ?? "",
-        answer: item.answer ?? "",
-        status: item.status === "mastered" ? "mastered" : "new",
-      };
-    });
-  });
+    fetchCards();
+  }, []);
 
   const categories = Array.from(
     new Set(cards.map((c) => c.category).filter((cat) => cat.trim() !== "")),
   );
 
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="mx-auto w-full max-w-md px-4 py-6 space-y-6">
-        <h1 className="text-3xl font-bold text-center text-pink-500">
+      <main className="mx-auto w-full max-w-md space-y-6 px-4 py-6">
+        <h1 className="text-center text-3xl font-bold text-pink-500">
           カテゴリー別問題一覧
         </h1>
 
-        {categories.length === 0 && (
-          <p className="text-center text-gray-500">カテゴリーがありません</p>
-        )}
-        <div className="space-y-3">
+        {message && <p className="text-center text-gray-500">{message}</p>}
+
+        <div className="space-y-4 rounded-3xl bg-white p-5 shadow-md">
+          <Link
+            href="/cards/all"
+            className="block w-full rounded-2xl bg-pink-100 py-3 text-center transition hover:bg-pink-200"
+          >
+            すべて
+          </Link>
+
           {categories.map((cat) => (
             <Link
               key={cat}
               href={`/cards/${cat}`}
-              className="block text-center bg-pink-100 hover:bg-pink-200 py-3 rounded-2xl transition"
+              className="block rounded-2xl bg-pink-100 py-3 text-center transition hover:bg-pink-200"
             >
               {cat}
             </Link>
