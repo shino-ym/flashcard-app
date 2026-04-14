@@ -20,14 +20,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+    
   const handleLogin = async () => {
     setMessage("ログイン中...");
 
     try {
-      const csrfRes = await fetch("http://localhost/sanctum/csrf-cookie", {
+      console.log("before csrf fetch");
+
+      const csrfRes = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         method: "GET",
         credentials: "include",
       });
+
+      console.log("csrfRes:", csrfRes.status);
 
       if (!csrfRes.ok) {
         setMessage("CSRF Cookie取得に失敗");
@@ -36,17 +42,14 @@ export default function LoginPage() {
 
       const xsrfToken = getCookie("XSRF-TOKEN");
 
-      if (!xsrfToken) {
-        setMessage("XSRF-TOKENが取得できません");
-        return;
-      }
+      console.log("before login fetch");
 
-      const loginRes = await fetch("http://localhost/login", {
+      const loginRes = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-XSRF-TOKEN": xsrfToken,
+          "X-XSRF-TOKEN": xsrfToken ?? "",
         },
         credentials: "include",
         body: JSON.stringify({
@@ -55,14 +58,16 @@ export default function LoginPage() {
         }),
       });
 
-      const loginData = await loginRes.json();
+      console.log("loginRes:", loginRes.status);
+
+      const loginData = await loginRes.json().catch(() => null);
 
       if (!loginRes.ok) {
-        setMessage(loginData.message || "ログイン失敗");
+        setMessage(loginData?.message || "ログイン失敗");
         return;
       }
 
-      const userRes = await fetch("http://localhost/api/user", {
+      const userRes = await fetch(`${API_BASE}/api/user`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -70,16 +75,19 @@ export default function LoginPage() {
         credentials: "include",
       });
 
-      const userData = await userRes.json();
+      console.log("userRes:", userRes.status);
+
+      const userData = await userRes.json().catch(() => null);
+      console.log("userData:", userData);
 
       if (!userRes.ok) {
-        setMessage(userData.message || "ユーザー取得失敗");
+        setMessage(userData?.message || "ユーザー取得失敗");
         return;
       }
 
-      setMessage(`ログイン成功: ${userData.name}`);
-
+      setMessage(`ログイン成功: ${userData.email}`);
       router.push("/");
+      return;
     } catch (error) {
       console.error("login error:", error);
       setMessage("通信エラーかCORSエラーの可能性があります");
@@ -129,10 +137,7 @@ export default function LoginPage() {
 
           <Link
             href="/register"
-            className="block
-              text-center
-              text-blue-500
-              hover:"
+            className="block text-center text-blue-500 hover:underline"
           >
             新規登録はこちら
           </Link>

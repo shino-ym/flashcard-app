@@ -65,12 +65,12 @@ export default function EditPage() {
     fetchCard();
   }, [cardId]);
 
-
-
   const handleSave = async () => {
     const trimmedQuestion = question.trim();
     const trimmedAnswer = answer.trim();
     const trimmedCategory = category.trim();
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
     if (!targetCard) return;
     if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
@@ -78,7 +78,7 @@ export default function EditPage() {
     try {
       setIsSaving(true);
 
-      await fetch("http://localhost/sanctum/csrf-cookie", {
+      await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         credentials: "include",
       });
 
@@ -89,7 +89,7 @@ export default function EditPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost/api/cards/${cardId}`, {
+      const res = await fetch(`${API_BASE}/api/cards/${cardId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -154,7 +154,7 @@ export default function EditPage() {
           カード編集
         </h1>
 
-        <div>
+        <div className="space-y-4 rounded-3xl bg-white p-5 shadow-md">
           <p className="mb-3 text-xl font-bold">問題</p>
           <input
             className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
@@ -162,18 +162,12 @@ export default function EditPage() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
-        </div>
-
-        <div>
           <p className="mb-3 text-xl font-bold">答え</p>
           <textarea
             className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
           />
-        </div>
-
-        <div>
           <p className="mb-3 text-xl font-bold">カテゴリー</p>
           <input
             className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"

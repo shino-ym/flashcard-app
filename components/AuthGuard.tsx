@@ -8,6 +8,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
+
   useEffect(() => {
     const checkAuth = async () => {
       // loginとregisterページはチェックしない
@@ -17,7 +20,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const res = await fetch("http://localhost/api/user", {
+        const res = await fetch(`${API_BASE}/api/user`, {
           headers: {
             Accept: "application/json",
           },
@@ -37,7 +40,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-  }, [pathname, router]);
+  }, [pathname, router, API_BASE]);
 
   if (isChecking && pathname !== "/login") {
     return (

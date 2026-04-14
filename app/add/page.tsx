@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 function getCookie(name: string) {
   const value = `; ${document.cookie}`;
@@ -14,13 +13,14 @@ function getCookie(name: string) {
 }
 
 export default function AddPage() {
-  const router = useRouter();
-
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [category, setCategory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
   const handleGenerateAnswer = async () => {
     if (!question.trim()) return;
@@ -44,6 +44,7 @@ export default function AddPage() {
       }
 
       setAnswer(data.answer);
+
     } catch (error) {
       console.error(error);
       alert("通信エラーが発生しました");
@@ -58,7 +59,7 @@ export default function AddPage() {
     try {
       setIsSaving(true);
 
-      const csrfRes = await fetch("http://localhost/sanctum/csrf-cookie", {
+      const csrfRes = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         method: "GET",
         credentials: "include",
       });
@@ -75,21 +76,24 @@ export default function AddPage() {
         return;
       }
 
-      const res = await fetch("http://localhost/api/cards", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "X-XSRF-TOKEN": xsrfToken,
+      const res = await fetch(
+        `${API_BASE}/api/cards`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-XSRF-TOKEN": xsrfToken,
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            category,
+            question,
+            answer,
+            status: "new",
+          }),
         },
-        credentials: "include",
-        body: JSON.stringify({
-          category,
-          question,
-          answer,
-          status: "new",
-        }),
-      });
+      );
 
       const data = await res.json();
 
@@ -108,6 +112,12 @@ export default function AddPage() {
     } finally {
       setIsSaving(false);
     }
+
+    setMessage("保存しました！");
+
+    setTimeout(() => {
+      setMessage("");
+    }, 2000);
   };
 
   return (
@@ -164,6 +174,12 @@ export default function AddPage() {
             {isSaving ? "保存中..." : "保存"}
           </button>
         </div>
+
+        {message && (
+          <p className="lock text-center rounded-xl bg-gray-100 p-3 text-sm">
+            {message}
+          </p>
+        )}
 
         <Link
           href="/cards"

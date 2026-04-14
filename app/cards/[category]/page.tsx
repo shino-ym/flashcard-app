@@ -10,6 +10,8 @@ export default function CardsCategoryPage() {
   const params = useParams();
   const category = decodeURIComponent(String(params.category));
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
   const [cards, setCards] = useState<Card[]>([]);
   const [message, setMessage] = useState("読み込み中...");
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,7 +21,7 @@ export default function CardsCategoryPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch("http://localhost/api/cards", {
+        const res = await fetch(`${API_BASE}/api/cards`, {
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -43,7 +45,7 @@ export default function CardsCategoryPage() {
     };
 
     fetchCards();
-  }, []);
+  }, [API_BASE]);
 
   const filteredCards =
     category.toLowerCase() === "all"
@@ -82,7 +84,7 @@ export default function CardsCategoryPage() {
       const newStatus: Card["status"] =
         targetCard.status === "mastered" ? "new" : "mastered";
 
-      await fetch("http://localhost/sanctum/csrf-cookie", {
+      await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         credentials: "include",
       });
 
@@ -93,21 +95,24 @@ export default function CardsCategoryPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost/api/cards/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "X-XSRF-TOKEN": xsrfToken,
+      const res = await fetch(
+        `${API_BASE}/api/cards/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-XSRF-TOKEN": xsrfToken,
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            category: targetCard.category,
+            question: targetCard.question,
+            answer: targetCard.answer,
+            status: newStatus,
+          }),
         },
-        credentials: "include",
-        body: JSON.stringify({
-          category: targetCard.category,
-          question: targetCard.question,
-          answer: targetCard.answer,
-          status: newStatus,
-        }),
-      });
+      );
 
       const data = await res.json();
 

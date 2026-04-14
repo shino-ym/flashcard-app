@@ -15,15 +15,20 @@ export default function LogoutButton() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
   if (pathname === "/login" || pathname === "/register") {
     return null;
   }
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost/sanctum/csrf-cookie", {
-        credentials: "include",
-      });
+      await fetch(
+        `${API_BASE}/sanctum/csrf-cookie`,
+        {
+          credentials: "include",
+        },
+      );
 
       const xsrfToken = getCookie("XSRF-TOKEN");
 
@@ -32,7 +37,7 @@ export default function LogoutButton() {
         return;
       }
 
-      await fetch("http://localhost/logout", {
+      await fetch(`${API_BASE}/logout`, {
         method: "POST",
         headers: {
           "X-XSRF-TOKEN": xsrfToken,

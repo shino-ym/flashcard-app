@@ -8,10 +8,12 @@ export default function CardsPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [message, setMessage] = useState("読み込み中...");
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch("http://localhost/api/cards", {
+        const res = await fetch(`${API_BASE}/api/cards`, {
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -35,12 +37,11 @@ export default function CardsPage() {
     };
 
     fetchCards();
-  }, []);
+  }, [API_BASE]);
 
   const categories = Array.from(
     new Set(cards.map((c) => c.category).filter((cat) => cat.trim() !== "")),
   );
-
 
   return (
     <div className="min-h-screen bg-gray-50">

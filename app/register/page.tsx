@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -9,6 +10,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
   function getCookie(name: string) {
     const value = `; ${document.cookie}`;
@@ -21,10 +24,13 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     try {
-      const csrfRes = await fetch("http://localhost/sanctum/csrf-cookie", {
-        method: "GET",
-        credentials: "include",
-      });
+      const csrfRes = await fetch(
+        `${API_BASE}/sanctum/csrf-cookie`,
+        {
+          method: "GET",
+          credentials: "include",
+        },
+      );
 
       if (!csrfRes.ok) {
         setMessage("CSRF Cookie取得に失敗");
@@ -38,7 +44,7 @@ export default function RegisterPage() {
         return;
       }
 
-      const res = await fetch("http://localhost/register", {
+      const res = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,6 +109,13 @@ export default function RegisterPage() {
         </button>
 
         {message && <p className="text-center text-sm">{message}</p>}
+
+        <Link
+          href="/login"
+          className="block text-center text-blue-500 hover:underline"
+        >
+          ログインはこちら
+        </Link>
       </main>
     </div>
   );

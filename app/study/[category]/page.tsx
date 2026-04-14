@@ -10,6 +10,9 @@ export default function StudyPage() {
   const router = useRouter();
   const category = decodeURIComponent(String(params.category));
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
+
   const [cards, setCards] = useState<Card[]>([]);
   const [message, setMessage] = useState("読み込み中...");
   const [index, setIndex] = useState(0);
@@ -19,7 +22,7 @@ export default function StudyPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch("http://localhost/api/cards", {
+        const res = await fetch(`${API_BASE}/api/cards`, {
           headers: {
             Accept: "application/json",
           },
@@ -42,7 +45,7 @@ export default function StudyPage() {
     };
 
     fetchCards();
-  }, []);
+  }, [API_BASE]);
 
   const filteredCards =
     category.toLowerCase() === "all"
@@ -108,9 +111,12 @@ export default function StudyPage() {
       const newStatus: Card["status"] =
         targetCard.status === "mastered" ? "new" : "mastered";
 
-      await fetch("http://localhost/sanctum/csrf-cookie", {
-        credentials: "include",
-      });
+      await fetch(
+       `${API_BASE}/sanctum/csrf-cookie`,
+        {
+          credentials: "include",
+        },
+      );
 
       const xsrfToken = document.cookie
         .split("; ")
@@ -122,7 +128,7 @@ export default function StudyPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost/api/cards/${id}`, {
+      const res = await fetch(`${API_BASE}/api/cards/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -178,9 +184,12 @@ export default function StudyPage() {
     if (!confirm("本当に削除しますか？")) return;
 
     try {
-      await fetch("http://localhost/sanctum/csrf-cookie", {
-        credentials: "include",
-      });
+      await fetch(
+        `${API_BASE}/sanctum/csrf-cookie`,
+        {
+          credentials: "include",
+        },
+      );
 
       const xsrfToken = document.cookie
         .split("; ")
@@ -192,7 +201,7 @@ export default function StudyPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost/api/cards/${id}`, {
+      const res = await fetch(`${API_BASE}/api/cards/${id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
