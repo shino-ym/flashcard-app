@@ -4,15 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-function getCookie(name: string) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return decodeURIComponent(parts.pop()!.split(";").shift()!);
-  }
-  return null;
-}
-
 export default function LoginPage() {
   const router = useRouter();
 
@@ -26,30 +17,22 @@ export default function LoginPage() {
     setMessage("ログイン中...");
 
     try {
-      console.log("before csrf fetch");
 
       const csrfRes = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         method: "GET",
         credentials: "include",
       });
 
-      console.log("csrfRes:", csrfRes.status);
-
       if (!csrfRes.ok) {
         setMessage("CSRF Cookie取得に失敗");
         return;
       }
-
-      const xsrfToken = getCookie("XSRF-TOKEN");
-
-      console.log("before login fetch");
 
       const loginRes = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-XSRF-TOKEN": xsrfToken ?? "",
         },
         credentials: "include",
         body: JSON.stringify({
@@ -57,8 +40,6 @@ export default function LoginPage() {
           password,
         }),
       });
-
-      console.log("loginRes:", loginRes.status);
 
       const loginData = await loginRes.json().catch(() => null);
 
@@ -75,10 +56,8 @@ export default function LoginPage() {
         credentials: "include",
       });
 
-      console.log("userRes:", userRes.status);
 
       const userData = await userRes.json().catch(() => null);
-      console.log("userData:", userData);
 
       if (!userRes.ok) {
         setMessage(userData?.message || "ユーザー取得失敗");
