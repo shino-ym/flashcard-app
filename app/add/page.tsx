@@ -3,15 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 
-function getCookie(name: string) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return decodeURIComponent(parts.pop()!.split(";").shift()!);
-  }
-  return null;
-}
-
 export default function AddPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -44,7 +35,6 @@ export default function AddPage() {
       }
 
       setAnswer(data.answer);
-
     } catch (error) {
       console.error(error);
       alert("通信エラーが発生しました");
@@ -59,65 +49,50 @@ export default function AddPage() {
     try {
       setIsSaving(true);
 
-      const csrfRes = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
-        method: "GET",
-        credentials: "include",
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("ログインしてください");
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/api/cards`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          // 「私はログイン済みです」
+        },
+        body: JSON.stringify({
+          category,
+          question,
+          answer,
+          status: "new",
+        }),
       });
 
-      if (!csrfRes.ok) {
-        alert("CSRF Cookie取得に失敗しました");
-        return;
-      }
-
-      const xsrfToken = getCookie("XSRF-TOKEN");
-
-      if (!xsrfToken) {
-        alert("XSRF-TOKENが取得できません");
-        return;
-      }
-
-      const res = await fetch(
-        `${API_BASE}/api/cards`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-XSRF-TOKEN": xsrfToken,
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            category,
-            question,
-            answer,
-            status: "new",
-          }),
-        },
-      );
-
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        alert(data.message || "保存に失敗しました");
+        alert(data?.message || "保存に失敗しました");
         return;
       }
 
       setQuestion("");
       setAnswer("");
       setCategory("");
+      setMessage("保存しました！");
 
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
     } catch (error) {
       console.error(error);
       alert("通信エラーが発生しました");
     } finally {
       setIsSaving(false);
     }
-
-    setMessage("保存しました！");
-
-    setTimeout(() => {
-      setMessage("");
-    }, 2000);
   };
 
   return (

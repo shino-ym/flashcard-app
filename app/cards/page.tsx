@@ -12,16 +12,23 @@ export default function CardsPage() {
 
   useEffect(() => {
     const fetchCards = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setMessage("ログインしてください");
+        return;
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/cards`, {
           method: "GET",
           headers: {
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => null);;
 
         if (!res.ok) {
           setMessage(data.message || "カード取得失敗");

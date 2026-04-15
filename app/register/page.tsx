@@ -14,46 +14,33 @@ export default function RegisterPage() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
   const handleRegister = async () => {
+    setMessage("登録中...");
+
     try {
-      const csrfRes = await fetch(
-        `${API_BASE}/sanctum/csrf-cookie`,
-        {
-          method: "GET",
-          credentials: "include",
-        },
-      );
-
-      if (!csrfRes.ok) {
-        setMessage("CSRF Cookie取得に失敗");
-        return;
-      }
-
-      const res = await fetch(`${API_BASE}/register`, {
+      const res = await fetch(`${API_BASE}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           email,
           password,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        setMessage(data.message || "登録失敗");
+        setMessage(data?.message || "登録失敗");
         return;
       }
 
-      setMessage("登録成功！ログインしてください");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      // ログイン画面へ
-      setTimeout(() => {
-        router.push("/login");
-      }, 1000);
+      setMessage("登録成功");
+      router.push("/");
     } catch (error) {
       console.error(error);
       setMessage("通信エラー");

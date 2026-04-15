@@ -2,15 +2,6 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
-function getCookie(name: string) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return decodeURIComponent(parts.pop()!.split(";").shift()!);
-  }
-  return null;
-}
-
 export default function LogoutButton() {
   const router = useRouter();
   const pathname = usePathname();
@@ -22,28 +13,29 @@ export default function LogoutButton() {
   }
 
   const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     try {
-      await fetch(
-        `${API_BASE}/sanctum/csrf-cookie`,
-        {
-          credentials: "include",
+      const res = await fetch(`${API_BASE}/api/logout`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
-      const xsrfToken = getCookie("XSRF-TOKEN");
-
-      if (!xsrfToken) {
-        alert("トークン取得失敗");
+      if (!res.ok) {
+        alert("ログアウト失敗");
         return;
       }
 
-      await fetch(`${API_BASE}/logout`, {
-        method: "POST",
-        headers: {
-          "X-XSRF-TOKEN": xsrfToken,
-        },
-        credentials: "include",
-      });
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
       router.push("/login");
     } catch (error) {

@@ -5,19 +5,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/types/card";
 
-function getCookie(name: string) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return decodeURIComponent(parts.pop()!.split(";").shift()!);
-  }
-  return null;
-}
-
 export default function EditPage() {
   const params = useParams();
   const router = useRouter();
   const cardId = Number(params.id);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
   const [targetCard, setTargetCard] = useState<Card | null>(null);
   const [question, setQuestion] = useState("");
@@ -28,19 +21,26 @@ export default function EditPage() {
 
   useEffect(() => {
     const fetchCard = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setMessage("ログインしてください");
+        return;
+      }
+
       try {
-        const res = await fetch("http://localhost/api/cards", {
+        const res = await fetch(`${API_BASE}/api/cards`, {
           method: "GET",
           headers: {
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
 
         if (!res.ok) {
-          setMessage(data.message || "カード取得失敗");
+          setMessage(data?.message || "カード取得失敗");
           return;
         }
 
@@ -63,14 +63,19 @@ export default function EditPage() {
     };
 
     fetchCard();
-  }, [cardId]);
+  }, [cardId, API_BASE]);
 
   const handleSave = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("ログインしてください");
+      return;
+    }
+
     const trimmedQuestion = question.trim();
     const trimmedAnswer = answer.trim();
     const trimmedCategory = category.trim();
-
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
     if (!targetCard) return;
     if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
@@ -78,25 +83,13 @@ export default function EditPage() {
     try {
       setIsSaving(true);
 
-      await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
-        credentials: "include",
-      });
-
-      const xsrfToken = getCookie("XSRF-TOKEN");
-
-      if (!xsrfToken) {
-        alert("XSRF-TOKENが取得できません");
-        return;
-      }
-
       const res = await fetch(`${API_BASE}/api/cards/${cardId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-XSRF-TOKEN": xsrfToken,
+          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
         body: JSON.stringify({
           category: trimmedCategory,
           question: trimmedQuestion,
@@ -105,10 +98,10 @@ export default function EditPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        alert(data.message || "保存失敗");
+        alert(data?.message || "保存失敗");
         return;
       }
 

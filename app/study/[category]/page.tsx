@@ -12,7 +12,6 @@ export default function StudyPage() {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
-
   const [cards, setCards] = useState<Card[]>([]);
   const [message, setMessage] = useState("読み込み中...");
   const [index, setIndex] = useState(0);
@@ -21,18 +20,25 @@ export default function StudyPage() {
 
   useEffect(() => {
     const fetchCards = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setMessage("ログインしてください");
+        return;
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/cards`, {
           headers: {
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
 
         if (!res.ok) {
-          setMessage(data.message || "カード取得失敗");
+          setMessage(data?.message || "カード取得失敗");
           return;
         }
 
@@ -104,6 +110,13 @@ export default function StudyPage() {
   };
 
   const toggleMastered = async (id: number) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("ログインしてください");
+      return;
+    }
+
     try {
       const targetCard = cards.find((c) => c.id === id);
       if (!targetCard) return;
@@ -111,31 +124,13 @@ export default function StudyPage() {
       const newStatus: Card["status"] =
         targetCard.status === "mastered" ? "new" : "mastered";
 
-      await fetch(
-       `${API_BASE}/sanctum/csrf-cookie`,
-        {
-          credentials: "include",
-        },
-      );
-
-      const xsrfToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("XSRF-TOKEN="))
-        ?.split("=")[1];
-
-      if (!xsrfToken) {
-        alert("トークン取得失敗");
-        return;
-      }
-
       const res = await fetch(`${API_BASE}/api/cards/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-XSRF-TOKEN": decodeURIComponent(xsrfToken),
+          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
         body: JSON.stringify({
           category: targetCard.category,
           question: targetCard.question,
@@ -144,10 +139,10 @@ export default function StudyPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        alert(data.message || "更新失敗");
+        alert(data?.message || "更新失敗");
         return;
       }
 
@@ -181,43 +176,50 @@ export default function StudyPage() {
   };
 
   const deleteCard = async (id: number) => {
-    if (!confirm("本当に削除しますか？")) return;
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("ログインしてください");
+      return;
+    }
+
+    if (!window.confirm("本当に削除しますか？")) return;
 
     try {
-      await fetch(
-        `${API_BASE}/sanctum/csrf-cookie`,
-        {
-          credentials: "include",
-        },
-      );
-
-      const xsrfToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("XSRF-TOKEN="))
-        ?.split("=")[1];
-
-      if (!xsrfToken) {
-        alert("トークン取得失敗");
-        return;
-      }
-
       const res = await fetch(`${API_BASE}/api/cards/${id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
-          "X-XSRF-TOKEN": decodeURIComponent(xsrfToken),
+          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        alert(data.message || "削除失敗");
+        alert(data?.message || "削除失敗");
         return;
       }
 
-      setCards((prev) => prev.filter((c) => c.id !== id));
+      const updatedCards = cards.filter((c) => c.id !== id);
+      setCards(updatedCards);
+
+      const nextFilteredCards =
+        category.toLowerCase() === "all"
+          ? updatedCards.filter((card) => card.status !== "mastered")
+          : updatedCards.filter(
+              (card) =>
+                card.category.toLowerCase() === category.toLowerCase() &&
+                card.status !== "mastered",
+            );
+
+      if (
+        safeIndex >= nextFilteredCards.length &&
+        nextFilteredCards.length > 0
+      ) {
+        setIndex(0);
+      }
+
       setShowAnswer(false);
     } catch (error) {
       console.error(error);

@@ -20,19 +20,26 @@ export default function CardsCategoryPage() {
 
   useEffect(() => {
     const fetchCards = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setMessage("ログインしてください");
+        return;
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/cards`, {
           method: "GET",
           headers: {
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
 
         if (!res.ok) {
-          setMessage(data.message || "カード取得失敗");
+          setMessage(data?.message || "カード取得失敗");
           return;
         }
 
@@ -60,6 +67,7 @@ export default function CardsCategoryPage() {
     1,
     Math.ceil(filteredCards.length / ITEMS_PER_PAGE),
   );
+
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
   const paginatedCards = filteredCards.slice(
@@ -67,16 +75,14 @@ export default function CardsCategoryPage() {
     startIndex + ITEMS_PER_PAGE,
   );
 
-  function getCookie(name: string) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return decodeURIComponent(parts.pop()!.split(";").shift()!);
-    }
-    return null;
-  }
-
   const toggleMastered = async (id: number) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("ログインしてください");
+      return;
+    }
+
     try {
       const targetCard = cards.find((c) => c.id === id);
       if (!targetCard) return;
@@ -84,40 +90,25 @@ export default function CardsCategoryPage() {
       const newStatus: Card["status"] =
         targetCard.status === "mastered" ? "new" : "mastered";
 
-      await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
-        credentials: "include",
+      const res = await fetch(`${API_BASE}/api/cards/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          category: targetCard.category,
+          question: targetCard.question,
+          answer: targetCard.answer,
+          status: newStatus,
+        }),
       });
 
-      const xsrfToken = getCookie("XSRF-TOKEN");
-
-      if (!xsrfToken) {
-        alert("XSRF-TOKENが取得できません");
-        return;
-      }
-
-      const res = await fetch(
-        `${API_BASE}/api/cards/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-XSRF-TOKEN": xsrfToken,
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            category: targetCard.category,
-            question: targetCard.question,
-            answer: targetCard.answer,
-            status: newStatus,
-          }),
-        },
-      );
-
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        alert(data.message || "更新失敗");
+        alert(data?.message || "更新失敗");
         return;
       }
 
@@ -126,6 +117,40 @@ export default function CardsCategoryPage() {
           card.id === id ? { ...card, status: newStatus } : card,
         ),
       );
+    } catch (error) {
+      console.error(error);
+      alert("通信エラー");
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("ログインしてください");
+      return;
+    }
+
+    const ok = window.confirm("この問題を削除しますか？");
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/cards/${id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        alert(data?.message || "削除失敗");
+        return;
+      }
+
+      setCards((prev) => prev.filter((card) => card.id !== id));
     } catch (error) {
       console.error(error);
       alert("通信エラー");
@@ -173,7 +198,7 @@ export default function CardsCategoryPage() {
 
               <button
                 className="rounded-2xl bg-red-100 px-4 py-2 hover:bg-red-200"
-                onClick={() => alert("次にAPI化する")}
+                onClick={() => handleDelete(card.id)}
               >
                 削除
               </button>

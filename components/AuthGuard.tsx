@@ -10,7 +10,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
-
   useEffect(() => {
     const checkAuth = async () => {
       // loginとregisterページはチェックしない
@@ -19,15 +18,24 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/user`, {
           headers: {
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         });
 
         if (!res.ok) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
           router.push("/login");
           return;
         }
@@ -42,7 +50,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [pathname, router, API_BASE]);
 
-  if (isChecking && pathname !== "/login") {
+  if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500">認証確認中...</p>

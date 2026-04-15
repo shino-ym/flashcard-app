@@ -4,7 +4,6 @@ import "./globals.css";
 import LogoutButton from "../components/LogoutButton";
 import AuthGuard from "../components/AuthGuard";
 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,10 +32,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <AuthGuard>
           <header className="flex justify-end p-4 bg-gray-50">
-          <LogoutButton />
+            <LogoutButton />
           </header>
 
-          {children}
+          <main className="flex-1">{children}</main>
         </AuthGuard>
       </body>
     </html>

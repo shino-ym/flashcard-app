@@ -12,29 +12,17 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
-    
+
   const handleLogin = async () => {
     setMessage("ログイン中...");
 
     try {
-
-      const csrfRes = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!csrfRes.ok) {
-        setMessage("CSRF Cookie取得に失敗");
-        return;
-      }
-
-      const loginRes = await fetch(`${API_BASE}/login`, {
+      const loginRes = await fetch(`${API_BASE}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           email,
           password,
@@ -48,28 +36,14 @@ export default function LoginPage() {
         return;
       }
 
-      const userRes = await fetch(`${API_BASE}/api/user`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-        credentials: "include",
-      });
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData.user));
 
-
-      const userData = await userRes.json().catch(() => null);
-
-      if (!userRes.ok) {
-        setMessage(userData?.message || "ユーザー取得失敗");
-        return;
-      }
-
-      setMessage(`ログイン成功: ${userData.email}`);
+      setMessage(`ログイン成功: ${loginData.user.email}`);
       router.push("/");
-      return;
     } catch (error) {
       console.error("login error:", error);
-      setMessage("通信エラーかCORSエラーの可能性があります");
+      setMessage("通信エラーの可能性があります");
     }
   };
 
