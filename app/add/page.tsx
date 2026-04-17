@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Card } from "@/types/card";
 import Link from "next/link";
 
 export default function AddPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [category, setCategory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+
+  const [categories, setCategories] = useState<string[]>([]);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -44,7 +49,9 @@ export default function AddPage() {
   };
 
   const handleSave = async () => {
-    if (!category.trim() || !question.trim() || !answer.trim()) return;
+    const finalCategory = newCategory.trim() || selectedCategory;
+
+    if (!finalCategory || !question.trim() || !answer.trim()) return;
 
     try {
       setIsSaving(true);
@@ -62,10 +69,9 @@ export default function AddPage() {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
-          // 「私はログイン済みです」
         },
         body: JSON.stringify({
-          category,
+          category: finalCategory,
           question,
           answer,
           status: "new",
@@ -79,9 +85,14 @@ export default function AddPage() {
         return;
       }
 
+      if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+        setCategories([...categories, newCategory.trim()]);
+      }
+
       setQuestion("");
       setAnswer("");
-      setCategory("");
+      setSelectedCategory("");
+      setNewCategory("");
       setMessage("保存しました！");
 
       setTimeout(() => {
@@ -95,6 +106,41 @@ export default function AddPage() {
     }
   };
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/cards`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        const data = (await res.json().catch(() => null)) as Card[] | null;
+
+        if (!res.ok || !data) return;
+
+        const uniqueCategories: string[] = Array.from(
+          new Set(
+            data
+              .map((card: { category: string }) => card.category)
+              .filter((cat: string) => cat.trim() !== ""),
+          ),
+        );
+
+        setCategories(uniqueCategories);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchCategories();
+  }, [API_BASE]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto w-full max-w-md space-y-6 px-4 py-6">
@@ -103,9 +149,10 @@ export default function AddPage() {
         </h1>
 
         <div className="space-y-4 rounded-3xl bg-white p-5 shadow-md">
-          <p className="mb-3 text-1xl font-bold">問題</p>
+          <p className="font-bold">問題</p>
+
           <input
-            className="w-full rounded-2xl border border-pink-200 p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="w-full rounded-2xl border border-pink-200 p-3"
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -113,7 +160,7 @@ export default function AddPage() {
           />
 
           <button
-            className="block rounded-3xl bg-pink-100 px-4 py-4 text-center transition hover:bg-pink-200 disabled:opacity-50"
+            className="block rounded-3xl bg-pink-100 px-4 py-4 hover:bg-pink-200 disabled:opacity-50"
             onClick={handleGenerateAnswer}
             disabled={isGenerating}
           >
@@ -124,25 +171,41 @@ export default function AddPage() {
                 : "AIで答え生成"}
           </button>
 
-          <p className="mb-3 text-1xl font-bold">答え</p>
+          <p className="font-bold">答え</p>
+
           <textarea
-            className="min-h-[120px] w-full rounded-2xl border border-pink-200 p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="min-h-[120px] w-full rounded-2xl border border-pink-200 p-3"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="答えを入力"
           />
 
-          <p className="mb-3 text-1xl font-bold">カテゴリー</p>
+          <p className="font-bold">カテゴリー</p>
+
+          <select
+            className="w-full rounded-2xl border border-pink-200 p-3"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">既存カテゴリを選ぶ</option>
+
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
           <input
-            className="w-full rounded-2xl border border-pink-200 p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="w-full rounded-2xl border border-pink-200 p-3"
             type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="カテゴリーを入力"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="新しいカテゴリを入力"
           />
 
           <button
-            className="w-full rounded-2xl bg-rose-500 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:opacity-50"
+            className="w-full rounded-2xl bg-rose-500 py-3 font-semibold text-white hover:bg-rose-600 disabled:opacity-50"
             onClick={handleSave}
             disabled={isSaving}
           >
@@ -151,14 +214,14 @@ export default function AddPage() {
         </div>
 
         {message && (
-          <p className="lock text-center rounded-xl bg-gray-100 p-3 text-sm">
+          <p className="rounded-xl bg-gray-100 p-3 text-center text-sm">
             {message}
           </p>
         )}
 
         <Link
           href="/cards"
-          className="block rounded-2xl bg-pink-100 py-3 text-center transition hover:bg-pink-200"
+          className="block rounded-2xl bg-pink-100 py-3 text-center hover:bg-pink-200"
         >
           問題一覧を見る
         </Link>

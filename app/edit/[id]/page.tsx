@@ -15,7 +15,9 @@ export default function EditPage() {
   const [targetCard, setTargetCard] = useState<Card | null>(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [category, setCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [message, setMessage] = useState("読み込み中...");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -37,24 +39,34 @@ export default function EditPage() {
           },
         });
 
-        const data = await res.json().catch(() => null);
+        const data = (await res.json().catch(() => null)) as Card[] | null;
 
-        if (!res.ok) {
-          setMessage(data?.message || "カード取得失敗");
+        if (!res.ok || !data) {
+          setMessage("カード取得失敗");
           return;
         }
 
-        const foundCard = data.find((card: Card) => card.id === cardId);
+        const foundCard = data.find((card) => card.id === cardId);
 
         if (!foundCard) {
           setMessage("問題が見つかりません");
           return;
         }
 
+        const uniqueCategories = Array.from(
+          new Set(
+            data
+              .map((card) => card.category)
+              .filter((cat) => cat.trim() !== ""),
+          ),
+        );
+
+        setCategories(uniqueCategories);
         setTargetCard(foundCard);
         setQuestion(foundCard.question);
         setAnswer(foundCard.answer);
-        setCategory(foundCard.category);
+        setSelectedCategory(foundCard.category);
+        setNewCategory("");
         setMessage("");
       } catch (error) {
         console.error(error);
@@ -75,7 +87,8 @@ export default function EditPage() {
 
     const trimmedQuestion = question.trim();
     const trimmedAnswer = answer.trim();
-    const trimmedCategory = category.trim();
+    const finalCategory = newCategory.trim() || selectedCategory;
+    const trimmedCategory = finalCategory.trim();
 
     if (!targetCard) return;
     if (!trimmedQuestion || !trimmedAnswer || !trimmedCategory) return;
@@ -155,18 +168,34 @@ export default function EditPage() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
+
           <p className="mb-3 text-xl font-bold">答え</p>
           <textarea
             className="w-full border border-pink-200 rounded-2xl p-3 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-pink-300"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
           />
+
           <p className="mb-3 text-xl font-bold">カテゴリー</p>
-          <input
+          <select
             className="w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">既存カテゴリを選ぶ</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
+          <input
+            className="mt-3 w-full border border-pink-200 rounded-2xl p-3 focus:outline-none focus:ring-2 focus:ring-pink-300"
             type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="新しいカテゴリを入力"
           />
         </div>
 
