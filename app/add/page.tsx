@@ -221,7 +221,7 @@ export default function AddPage() {
 
         <Link
           href="/cards"
-          className="block rounded-2xl bg-pink-100 py-3 text-center hover:bg-pink-200"
+          className="block rounded-2xl bg-purple-400 py-3 text-center text-white  font-semibold hover:bg-purple-500"
         >
           問題一覧を見る
         </Link>
