@@ -15,6 +15,7 @@ export default function CardsCategoryPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [message, setMessage] = useState("読み込み中...");
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchText, setSearchText] = useState("");
 
   const ITEMS_PER_PAGE = 10;
 
@@ -61,16 +62,26 @@ export default function CardsCategoryPage() {
           (card) =>
             card.category.trim().toLowerCase() ===
             category.trim().toLowerCase(),
-        );
+      );
+  
+  const searchedCards = filteredCards.filter((card) => {
+    const keyword = searchText.toLowerCase();
+
+    return (
+      card.question.toLowerCase().includes(keyword) ||
+      card.answer.toLowerCase().includes(keyword) ||
+      card.category.toLowerCase().includes(keyword)
+    );
+  });
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredCards.length / ITEMS_PER_PAGE),
+    Math.ceil(searchedCards.length / ITEMS_PER_PAGE),
   );
 
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedCards = filteredCards.slice(
+  const paginatedCards = searchedCards.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE,
   );
@@ -166,7 +177,17 @@ export default function CardsCategoryPage() {
 
         {message && <p className="text-center text-gray-500">{message}</p>}
 
-        {!message && filteredCards.length === 0 && (
+        <input
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            setCurrentPage(1); // ← これ重要（ページリセット）
+          }}
+          placeholder="問題・答え・カテゴリーで検索"
+          className="w-full rounded-2xl border border-pink-200 px-4 py-3"
+        />
+
+        {!message && searchedCards.length === 0 && (
           <p className="text-center text-gray-500">問題がありません</p>
         )}
 
