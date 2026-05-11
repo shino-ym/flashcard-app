@@ -60,38 +60,46 @@ export default function RegisterPage() {
           Flashcard App
         </h1>
 
-        <h2 className="text-2xl font-bold text-center">新規登録</h2>
+        <h2 className="mb-6 text-center text-2xl font-bold">新規登録</h2>
 
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="メール"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm">メールアドレス</label>
 
-        <input
-          type="password"
-          className="w-full border p-2 rounded"
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+            <input
+              type="email"
+              className="w-full rounded-xl border px-3 py-2"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-        <button
-          onClick={handleRegister}
-          className="w-full bg-pink-400 text-white py-2 rounded"
-        >
-          登録
-        </button>
+          <div>
+            <label className="mb-1 block text-sm">パスワード</label>
+            <input
+              type="password"
+              className="w-full rounded-xl border px-3 py-2"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
-        {message && <p className="text-center text-sm">{message}</p>}
+          <button
+            onClick={handleRegister}
+            className="w-full bg-pink-400 text-white py-2 rounded"
+          >
+            登録
+          </button>
 
-        <Link
-          href="/login"
-          className="block text-center text-blue-500 hover:underline"
-        >
-          ログインはこちら
-        </Link>
+          {message && <p className="text-center text-sm">{message}</p>}
+
+          <Link
+            href="/login"
+            className="block text-center text-blue-500 hover:underline"
+          >
+            ログインはこちら
+          </Link>
+        </div>
       </main>
     </div>
   );
