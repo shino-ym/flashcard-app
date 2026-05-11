@@ -32,7 +32,13 @@ export default function RegisterPage() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        setMessage(data?.message || "登録失敗");
+        if (data?.errors) {
+          const firstError = Object.values(data.errors)[0] as string[];
+          setMessage(firstError[0]);
+        } else {
+          setMessage(data?.message || "登録失敗");
+        }
+
         return;
       }
 

@@ -32,7 +32,13 @@ export default function LoginPage() {
       const loginData = await loginRes.json().catch(() => null);
 
       if (!loginRes.ok) {
-        setMessage(loginData?.message || "ログイン失敗");
+        if (loginData?.errors) {
+          const firstError = Object.values(loginData.errors)[0] as string[];
+          setMessage(firstError[0]);
+        } else {
+          setMessage(loginData?.message || "ログイン失敗");
+        }
+
         return;
       }
 
